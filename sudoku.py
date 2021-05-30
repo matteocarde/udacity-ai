@@ -76,9 +76,6 @@ def search(values):
             print(format("No solutions found !! Back tracking"))
 
 
-
-
-
 # Values is a dictionary array
 rows = 'ABCDEFGHI'
 cols = '123456789'
