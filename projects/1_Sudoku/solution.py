@@ -59,11 +59,18 @@ def naked_twins(values):
     #                 for digit in values[boxA]:
     #                     out[peer] = out[peer].replace(digit, "")
     for unit in unitlist:
-        twins = [box for box in unit if len(values[box]) == 2]
-        if len(twins) == 2 and values[twins[0]] == values[twins[1]]:
-            for other in set(unit) - set(twins):
-                for digit in values[twins[0]]:
-                    out[other] = out[other].replace(digit, "")
+        twins = {}
+        for box in unit:
+            if len(values[box]) != 2:
+                continue
+            twins[values[box]] = twins.get(values[box], [])
+            twins[values[box]].append(box)
+
+        for twinCouple in twins.values():
+            if len(twinCouple) == 2:
+                for other in set(unit) - set(twinCouple):
+                    for digit in values[twinCouple[0]]:
+                        out[other] = out[other].replace(digit, "")
     return out
 
 
@@ -104,7 +111,7 @@ def search(values):
     if all(len(values[s]) == 1 for s in boxes):
         return values
 
-    n,s = min((len(values[s]), s) for s in boxes if len(values[s]) > 1)
+    n, s = min((len(values[s]), s) for s in boxes if len(values[s]) > 1)
 
     for value in values[s]:
         new_sudoku = values.copy()
@@ -145,6 +152,7 @@ if __name__ == "__main__":
 
     try:
         import PySudoku
+
         PySudoku.play(grid2values(diag_sudoku_grid), result, history)
 
     except SystemExit:
