@@ -34,7 +34,7 @@ def run_search(problem, search_function, parameter=None):
     end = timer()
     # print("\n# Actions   Expansions   Goal Tests   New Nodes")
     # print("{}\n".format(ip))
-    # show_solution(node, end - start)
+    show_solution(node, end - start)
     # print()
 
 

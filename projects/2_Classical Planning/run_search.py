@@ -80,14 +80,13 @@ def main(p_choices, s_choices):
 
             problem_instance = problem_fn()
             heuristic_fn = None if not heuristic else getattr(problem_instance, heuristic)
-            run_search(problem_instance, search_fn, heuristic_fn)
 
             ip = PrintableProblem(problem_instance)
             start = timer();
             if heuristic_fn is not None:
-                search_fn(ip, heuristic_fn)
+                node = search_fn(ip, heuristic_fn)
             else:
-                search_fn(ip)
+                node = search_fn(ip)
             stats = ip.get_stats()
             end = timer()
             stats["time"] = end - start
@@ -101,6 +100,9 @@ def main(p_choices, s_choices):
                 stats["expansions"],
                 stats["goalTests"],
                 stats["newNodes"]))
+
+            # for action in node.solution():
+            #     print("{}{}".format(action.name, action.args))
 
 
 if __name__=="__main__":

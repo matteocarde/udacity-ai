@@ -19,7 +19,7 @@ class ActionLayer(BaseActionLayer):
         --------
         layers.ActionNode
         """
-        effects = itertools.product(action_a.effects, action_b.effects)
+        effects = itertools.product(self.children[action_a], self.children[action_b])
         for (effect_a, effect_b) in effects:
             if effect_a == ~effect_b:
                 return True
@@ -36,8 +36,8 @@ class ActionLayer(BaseActionLayer):
         --------
         layers.ActionNode
         """
-        pairs = list(itertools.product(list(action_a.preconditions), list(action_b.effects)))
-        pairs += list(itertools.product(list(action_b.preconditions), list(action_a.effects)))
+        pairs = list(itertools.product(self.parents[action_a], self.children[action_b]))
+        pairs += list(itertools.product(self.parents[action_b], self.children[action_a]))
         for (precondition, effect) in pairs:
             if precondition == ~effect:
                 return True
@@ -55,7 +55,7 @@ class ActionLayer(BaseActionLayer):
         layers.ActionNode
         layers.BaseLayer.parent_layer
         """
-        preconditions = itertools.product(list(action_a.preconditions), list(action_b.preconditions))
+        preconditions = itertools.product(self.parents[action_a], self.parents[action_b])
         for (precond_a, precond_b) in preconditions:
             if self.parent_layer.is_mutex(precond_a, precond_b):
                 return True
@@ -76,18 +76,14 @@ class LiteralLayer(BaseLiteralLayer):
         --------
         layers.BaseLayer.parent_layer
         """
-        support = []
-        for action in self.parent_layer:
-            if literal_a in action.effects or literal_b in action.effects:
-                support.append(action)
+        support = self.parents[literal_a] | self.parents[literal_b]
 
-        is_mutex = True
         pair_of_actions = list(itertools.combinations(support, 2))
         for (actionA, actionB) in pair_of_actions:
             if actionA != actionB and not self.parent_layer.is_mutex(actionA, actionB):
-                is_mutex = False
+                return False
 
-        return is_mutex
+        return True
 
     def _negation(self, literalA, literalB):
         """ Return True if two literals are negations of each other """
@@ -199,27 +195,14 @@ class PlanningGraph:
         -----
         WARNING: you should expect long runtimes using this heuristic with A*
         """
-        # i < - 0
-        #  loop
-        # until
-        # graph.isLeveled
-        # do
-        # allGoalsMet < - true
-        # for each goal in graph.goalLiterals do
-        # if goal not in graph.getLastLiteralLayer() then allGoalsMet < - false
-        # if allGoalsMet then return i
-        #  else graph.extend() / * add
-        # the
-        # next
-        # literal
-        # layer * /
-        # i < - i + 1
+
         max_level = 0
         while not self._is_leveled:
             all_goals_met = True
             for goal in self.goal:
                 if goal not in self.literal_layers[len(self.literal_layers) - 1]:
                     all_goals_met = False
+                    break
 
             if all_goals_met:
                 return max_level
@@ -259,6 +242,7 @@ class PlanningGraph:
             for goal in self.goal:
                 if goal not in last_literal_layer:
                     all_goals_met = False
+                    break
 
             if all_goals_met:
                 goals_combinations = itertools.combinations(self.goal, 2)
@@ -266,12 +250,12 @@ class PlanningGraph:
                 for (goalA, goalB) in goals_combinations:
                     if last_literal_layer.is_mutex(goalA, goalB):
                         all_goals_are_not_mutexes = False
+                        break
                 if all_goals_are_not_mutexes:
                     return level
 
             self._extend()
             level += 1
-            continue
 
         return level
 
