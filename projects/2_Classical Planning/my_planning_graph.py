@@ -62,6 +62,7 @@ class ActionLayer(BaseActionLayer):
 
         return False
 
+
 class LiteralLayer(BaseLiteralLayer):
 
     def _inconsistent_support(self, literal_a: Expr, literal_b: Expr):
@@ -80,15 +81,18 @@ class LiteralLayer(BaseLiteralLayer):
             if literal_a in action.effects or literal_b in action.effects:
                 support.append(action)
 
-        for (actionA, actionB) in itertools.product(support, support):
-            if self.parent_layer.is_mutex(actionA, actionB):
-                return True
+        is_mutex = True
+        pair_of_actions = list(itertools.combinations(support, 2))
+        for (actionA, actionB) in pair_of_actions:
+            if actionA != actionB and not self.parent_layer.is_mutex(actionA, actionB):
+                is_mutex = False
 
-        return False
+        return is_mutex
 
     def _negation(self, literalA, literalB):
         """ Return True if two literals are negations of each other """
         return literalA == ~literalB
+
 
 class PlanningGraph:
     def __init__(self, problem, state, serialize=True, ignore_mutexes=False):
@@ -116,7 +120,7 @@ class PlanningGraph:
         # make no-op actions that persist every literal to the next layer
         no_ops = [make_node(n, no_op=True) for n in chain(*(makeNoOp(s) for s in problem.state_map))]
         self._actionNodes = no_ops + [make_node(a) for a in problem.actions_list]
-        
+
         # initialize the planning graph by finding the literals that are in the
         # first layer and finding the actions they they should be connected to
         literals = [s if f else ~s for f, s in zip(state, problem.state_map)]
@@ -150,8 +154,23 @@ class PlanningGraph:
         --------
         Russell-Norvig 10.3.1 (3rd Edition)
         """
-        # TODO: implement this function
-        raise NotImplementedError
+        level = 0
+        levels = []
+        goals_left = set(self.goal)
+        while not self._is_leveled and goals_left:
+            last_literal_layer = self.literal_layers[len(self.literal_layers) - 1]
+            found_goals = set()
+            for goal in goals_left:
+                if goal in last_literal_layer:
+                    levels.append(level)
+                    found_goals.add(goal)
+
+            goals_left = goals_left - found_goals
+            self._extend()
+            level += 1
+            continue
+
+        return sum(levels)
 
     def h_maxlevel(self):
         """ Calculate the max level heuristic for the planning graph
@@ -180,8 +199,35 @@ class PlanningGraph:
         -----
         WARNING: you should expect long runtimes using this heuristic with A*
         """
-        # TODO: implement maxlevel heuristic
-        raise NotImplementedError
+        # i < - 0
+        #  loop
+        # until
+        # graph.isLeveled
+        # do
+        # allGoalsMet < - true
+        # for each goal in graph.goalLiterals do
+        # if goal not in graph.getLastLiteralLayer() then allGoalsMet < - false
+        # if allGoalsMet then return i
+        #  else graph.extend() / * add
+        # the
+        # next
+        # literal
+        # layer * /
+        # i < - i + 1
+        max_level = 0
+        while not self._is_leveled:
+            all_goals_met = True
+            for goal in self.goal:
+                if goal not in self.literal_layers[len(self.literal_layers) - 1]:
+                    all_goals_met = False
+
+            if all_goals_met:
+                return max_level
+
+            self._extend()
+            max_level += 1
+
+        return max_level
 
     def h_setlevel(self):
         """ Calculate the set level heuristic for the planning graph
@@ -205,8 +251,30 @@ class PlanningGraph:
         -----
         WARNING: you should expect long runtimes using this heuristic on complex problems
         """
-        # TODO: implement setlevel heuristic
-        raise NotImplementedError
+
+        level = 0
+        while not self._is_leveled:
+            all_goals_met = True
+            last_literal_layer = self.literal_layers[len(self.literal_layers) - 1]
+            for goal in self.goal:
+                if goal not in last_literal_layer:
+                    all_goals_met = False
+
+            if all_goals_met:
+                goals_combinations = itertools.combinations(self.goal, 2)
+                all_goals_are_not_mutexes = True
+                for (goalA, goalB) in goals_combinations:
+                    if last_literal_layer.is_mutex(goalA, goalB):
+                        all_goals_are_not_mutexes = False
+                if all_goals_are_not_mutexes:
+                    return level
+
+            self._extend()
+            level += 1
+            continue
+
+        return level
+
 
     ##############################################################################
     #                     DO NOT MODIFY CODE BELOW THIS LINE                     #

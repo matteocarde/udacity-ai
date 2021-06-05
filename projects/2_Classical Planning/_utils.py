@@ -15,6 +15,14 @@ class PrintableProblem(InstrumentedProblem):
         return '{:^10d}  {:^10d}  {:^10d}  {:^10d}'.format(
             len(self.problem.actions_list), self.succs, self.goal_tests, self.states)
 
+    def get_stats(self):
+        stats = dict();
+        stats["planLength"]= len(self.problem.actions_list)
+        stats["expansions"]= self.succs
+        stats["goalTests"]= self.goal_tests
+        stats["newNodes"]= self.states
+        return stats
+
 
 def run_search(problem, search_function, parameter=None):
     ip = PrintableProblem(problem)
@@ -24,10 +32,10 @@ def run_search(problem, search_function, parameter=None):
     else:
         node = search_function(ip)
     end = timer()
-    print("\n# Actions   Expansions   Goal Tests   New Nodes")
-    print("{}\n".format(ip))
-    show_solution(node, end - start)
-    print()
+    # print("\n# Actions   Expansions   Goal Tests   New Nodes")
+    # print("{}\n".format(ip))
+    # show_solution(node, end - start)
+    # print()
 
 
 def show_solution(node, elapsed_time):

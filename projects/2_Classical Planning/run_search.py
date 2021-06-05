@@ -7,9 +7,9 @@ from aimacode.search import (breadth_first_search, astar_search,
     recursive_best_first_search)
 from air_cargo_problems import air_cargo_p1, air_cargo_p2, air_cargo_p3, air_cargo_p4
 
-from _utils import run_search
-
-    ##############################################################################
+from _utils import run_search, PrintableProblem
+from timeit import default_timer as timer
+##############################################################################
     #                 YOU DO NOT NEED TO MODIFY CODE IN THIS FILE                #
     ##############################################################################
 
@@ -70,14 +70,37 @@ def main(p_choices, s_choices):
     problems = [PROBLEMS[i-1] for i in map(int, p_choices)]
     searches = [SEARCHES[i-1] for i in map(int, s_choices)]
 
+    general_stats = dict()
+
     for pname, problem_fn in problems:
+
+        general_stats[pname] = dict()
         for sname, search_fn, heuristic in searches:
             hstring = heuristic if not heuristic else " with {}".format(heuristic)
-            print("\nSolving {} using {}{}...".format(pname, sname, hstring))
 
             problem_instance = problem_fn()
             heuristic_fn = None if not heuristic else getattr(problem_instance, heuristic)
             run_search(problem_instance, search_fn, heuristic_fn)
+
+            ip = PrintableProblem(problem_instance)
+            start = timer();
+            if heuristic_fn is not None:
+                search_fn(ip, heuristic_fn)
+            else:
+                search_fn(ip)
+            stats = ip.get_stats()
+            end = timer()
+            stats["time"] = end - start
+            searchName = sname + "+" + heuristic
+            general_stats[pname][searchName] = stats
+            print("{0},{1},{2},{3},{4},{5},{6}".format(
+                pname,
+                searchName,
+                stats["time"],
+                stats["planLength"],
+                stats["expansions"],
+                stats["goalTests"],
+                stats["newNodes"]))
 
 
 if __name__=="__main__":
