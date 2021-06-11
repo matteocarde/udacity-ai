@@ -74,12 +74,27 @@ def main(p_choices, s_choices):
 
     for pname, problem_fn in problems:
 
+
         general_stats[pname] = dict()
         for sname, search_fn, heuristic in searches:
             hstring = heuristic if not heuristic else " with {}".format(heuristic)
 
             problem_instance = problem_fn()
             heuristic_fn = None if not heuristic else getattr(problem_instance, heuristic)
+
+            print("N of ground predicates {}".format(len(problem_instance.state_map)))
+            print("Airports: {} - Cargos: {} - Planes : {}".format(len(problem_instance.airports),len(problem_instance.cargos),len(problem_instance.planes)))
+
+            for i in range(0, len(problem_instance.state_map)):
+                if problem_instance.initial[i]:
+                    print(problem_instance.state_map[i])
+
+            print("Actions for this domain are:")
+            for a in problem_instance.actions_list:
+                print('   {}{}'.format(a.name, a.args))
+            print("Goal requirement for this problem are:")
+            for g in problem_instance.goal:
+                print('   {}'.format(g))
 
             ip = PrintableProblem(problem_instance)
             start = timer();
@@ -101,8 +116,8 @@ def main(p_choices, s_choices):
                 stats["goalTests"],
                 stats["newNodes"]))
 
-            # for action in node.solution():
-            #     print("{}{}".format(action.name, action.args))
+            for action in node.solution():
+                print("{}{}".format(action.name, action.args))
 
 
 if __name__=="__main__":
